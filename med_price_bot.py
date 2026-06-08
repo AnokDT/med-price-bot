@@ -23,10 +23,12 @@ _cache: dict[str, tuple[float, list]] = {} # {query: (timestamp, data)}
 # ───────────────────────────── Helper utilities
 async def get_json(session, url, **kw):
     async with RATE_LIMIT, session.get(url, headers=HEADERS, **kw) as r:
+        print("DBG", r.method, r.status, url[:60], flush=True)   # <─ add
         return await r.json()
 
 async def get_text(session, url, **kw):
     async with RATE_LIMIT, session.get(url, headers=HEADERS, **kw) as r:
+        print("DBG", r.method, r.status, url[:60], flush=True)   # <─ add
         return await r.text()
 
 def money(txt: str) -> float:
@@ -183,6 +185,7 @@ async def aggregate(query: str) -> list:
 
     out.sort(key=lambda x: x["price"])
     _cache[q] = (time.time(), out)
+        print("DBG total results", len(out), "for query", repr(query), flush=True)
     return out
 
 # ───────────────────────────── Telegram layer
