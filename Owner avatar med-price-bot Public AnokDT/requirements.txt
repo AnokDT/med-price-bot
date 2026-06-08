@@ -1,4 +1,0 @@
-aiohttp
-  lxml
-  rapidfuzz
-  python-telegram-bot==20.*
