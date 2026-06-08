@@ -13,6 +13,7 @@ import os, asyncio, re, html, json, time, aiohttp, lxml.html
 from rapidfuzz import fuzz
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
+from urllib.parse import quote_plus
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (MedPriceBot/1.0; +https://t.me/yourbot)"}
 TIMEOUT = aiohttp.ClientTimeout(total=25)
@@ -161,7 +162,8 @@ FETCHERS = [
 
 # ───────────────────────────── Aggregator
 async def aggregate(query: str) -> list:
-    q = query.strip().lower()
+    raw_q = query.strip().lower()
+safe_q = quote_plus(raw_q)          # "dolo 650" → "dolo+650"
     # simple 5-min cache to reduce load on sites
     if (q in _cache) and (time.time() - _cache[q][0] < CACHE_TTL):
         return _cache[q][1]
