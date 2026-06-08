@@ -185,7 +185,7 @@ async def aggregate(query: str) -> list:
 
     out.sort(key=lambda x: x["price"])
     _cache[q] = (time.time(), out)
-        print("DBG total results", len(out), "for query", repr(query), flush=True)
+    print("DBG total results", len(out), "for query", repr(query), flush=True)
     return out
 
 # ───────────────────────────── Telegram layer
