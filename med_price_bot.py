@@ -13,13 +13,17 @@ import os, asyncio, re, html, json, time, aiohttp, lxml.html
 from rapidfuzz import fuzz
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urljoin
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (MedPriceBot/1.0; +https://t.me/yourbot)"}
 TIMEOUT = aiohttp.ClientTimeout(total=25)
 RATE_LIMIT = asyncio.Semaphore(4)          # polite: max 4 concurrent requests
 CACHE_TTL = 300                            # 5-minute in-memory cache
 _cache: dict[str, tuple[float, list]] = {} # {query: (timestamp, data)}
+PROXY      = os.getenv("IN_PROXY")       # http://proxy.scrapfly.io:8123
+PROXY_USER = os.getenv("IN_PROXY_USER")  # scrapfly_proxy
+PROXY_PASS = os.getenv("IN_PROXY_PASS")  # sk_live_...
+PROXY_AUTH = aiohttp.BasicAuth(PROXY_USER, PROXY_PASS)
 
 # ───────────────────────────── Helper utilities
 async def get_json(session, url, **kw):
