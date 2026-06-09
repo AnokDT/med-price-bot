@@ -40,6 +40,25 @@ def money(txt: str) -> float:
     """extract first number like ₹23.50 -> 23.5"""
     m = re.search(r"\d+[\d.,]*", txt.replace(",", ""))
     return float(m.group(0)) if m else 0.0
+    # ─────────────────────────── HTTP helper layer
+async def get_json(session, url, **kw):
+    async with RATE_LIMIT, session.get(
+            url,
+            headers=HEADERS,
+            proxy=PROXY,
+            proxy_auth=PROXY_AUTH,
+            **kw) as r:
+        return await r.json()
+
+
+async def get_text(session, url, **kw):
+    async with RATE_LIMIT, session.get(
+            url,
+            headers=HEADERS,
+            proxy=PROXY,
+            proxy_auth=PROXY_AUTH,
+            **kw) as r:
+        return await r.text()
 
 # ───────────────────────────── Site-specific fetchers
 async def fetch_tata1mg(s, q):
