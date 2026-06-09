@@ -48,7 +48,7 @@ async def fetch_tata1mg(s, q):
             for p in data.get("data", {}).get("products", [])]
 
 async def fetch_apollo(s, q):
-    url = f"https://www.apollopharmacy.in/search-medicines/{q.replace(' ','-')}"
+    url = f"https://www.apollopharmacy.in/search-medicines/{q.replace('+','-')}"
     root = lxml.html.fromstring(await get_text(s, url))
     out = []
     for card in root.cssselect("div.product-card"):
@@ -162,21 +162,21 @@ FETCHERS = [
 
 # ───────────────────────────── Aggregator
 async def aggregate(query: str) -> list:
-    raw_q = query.strip().lower()
-safe_q = quote_plus(raw_q)          # "dolo 650" → "dolo+650"
-    # simple 5-min cache to reduce load on sites
-    if (q in _cache) and (time.time() - _cache[q][0] < CACHE_TTL):
-        return _cache[q][1]
+    raw_q  = query.strip().lower()          # for cache key
+    safe_q = quote_plus(raw_q)              # for URLs: "dolo 650" -> "dolo+650"
+
+    # 5-min in-memory cache
+    if raw_q in _cache and (time.time() - _cache[raw_q][0] < CACHE_TTL):
+        return _cache[raw_q][1]
 
     async with aiohttp.ClientSession(timeout=TIMEOUT) as session:
-        jobs = [f(session, q) for f in FETCHERS]
-        results = await asyncio.gather(*jobs, return_exceptions=True)
+        tasks   = [f(session, safe_q) for f in FETCHERS]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    # flatten + drop failures
-    raw = [item for sub in results if not isinstance(sub, Exception)
-           for item in sub]
+    # flatten & drop failures
+    raw = [item for sub in results if not isinstance(sub, Exception) for item in sub]
 
-    # fuzzy de-duplicate
+    # fuzzy de-dup
     out, seen = [], []
     for item in raw:
         key = item["name"].lower()
@@ -186,10 +186,8 @@ safe_q = quote_plus(raw_q)          # "dolo 650" → "dolo+650"
         out.append(item)
 
     out.sort(key=lambda x: x["price"])
-    _cache[q] = (time.time(), out)
-    print("DBG total results", len(out), "for query", repr(query), flush=True)
+    _cache[raw_q] = (time.time(), out)
     return out
-
 # ───────────────────────────── Telegram layer
 HELP = ("Send  /price <medicine name>\n"
         "Example: /price dolo 650\n"
